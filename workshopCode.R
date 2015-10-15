@@ -22,8 +22,17 @@ berkeleyCrime$lat <- gsub(",.*","",berkeleyCrime$latLong) #setting lat field
 berkeleyCrime$long <- as.numeric(berkeleyCrime$long)
 berkeleyCrime$lat <- as.numeric(berkeleyCrime$lat)
 
+berkeleyCrime$lat <- jitter(berkeleyCrime$lat, factor = .5)
+berkeleyCrime$long <- jitter(berkeleyCrime$long, factor = .5)
+
 #remove values with NA lat
 berkeleyCrime <- subset(berkeleyCrime, !is.na(berkeleyCrime$lat))
+
+#remove values that are below 36 degrees lat
+berkeleyCrime <- subset(berkeleyCrime, berkeleyCrime$lat>36)
+
+#cleaning date
+berkeleyCrime$EVENTDT <- gsub(" .*","",berkeleyCrime$EVENTDT)
 
 ##map data with ggplot
 
@@ -38,11 +47,33 @@ map <- ggmap(background) + coord_equal() +
   scale_alpha_continuous(range = c(.3))
 
 map
-##map data with leaflet
 
+##map data with leaflet
+leaflet(berkeleyCrime) %>%
+  addTiles(urlTemplate = "http://api.tiles.mapbox.com/v4/mapbox.light/{z}/{x}/{y}.png?access_token=pk.eyJ1Ijoiam9zaHBlcHBlciIsImEiOiJuTWdrY2k4In0.HCCXtgU04scrTB_-ON4kjA") %>%
+  addCircleMarkers(
+    stroke = FALSE, fillOpacity = 0.5, radius=3,
+    popup = ~paste("<strong>Offense:</strong>",OFFENSE,
+                   "<br>",
+                   "<strong>Date:</strong>",EVENTDT,
+                   "<br>",
+                   "<strong>Time:</strong>",EVENTTM)
+  )
+
+##map with markercluster
+leaflet(berkeleyCrime) %>%
+  addTiles(urlTemplate = "http://api.tiles.mapbox.com/v4/mapbox.light/{z}/{x}/{y}.png?access_token=pk.eyJ1Ijoiam9zaHBlcHBlciIsImEiOiJuTWdrY2k4In0.HCCXtgU04scrTB_-ON4kjA") %>%
+  addCircleMarkers(
+    stroke = FALSE, fillOpacity = 0.5, radius=8,
+    clusterOptions = markerClusterOptions(spiderfyDistanceMultiplier=2),
+    popup = ~paste("<strong>Offense:</strong>",OFFENSE,
+                   "<br>",
+                   "<strong>Date:</strong>",EVENTDT,
+                   "<br>",
+                   "<strong>Time:</strong>",EVENTTM)
+  )
 
 #add layer selector
-
 
 ##Shiny
 
