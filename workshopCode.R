@@ -38,15 +38,13 @@ library(RColorBrewer)
 
 ###GGPLOT
     
-
-    
   #MAP 1: map with ggplot
-      ggplot() + 
-      geom_point(data=berkeleyCrime, aes(x=long, y=lat))
+    map <- ggplot() + 
+           geom_point(data=berkeleyCrime, aes(x=long, y=lat))
     
     map
     
-  #MAP 2: adding a background map
+  #MAP 2: adding a background map using ggmap
     background <- get_map(location=c(lon = mean(berkeleyCrime$long), lat = mean(berkeleyCrime$lat)), zoom=14, maptype = "terrain", source="google", color="bw")
 
     map <- ggmap(background) + coord_equal() + 
