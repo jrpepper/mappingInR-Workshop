@@ -5,6 +5,7 @@ library(RColorBrewer)
 library(rgdal)
 library(raster)
 library(ggmap)
+library(RColorBrewer)
 
 ##load data (and parse data)
 berkeleyCrime <- read.csv("./data/berkeley-crime.csv")
@@ -37,7 +38,7 @@ berkeleyCrime$EVENTDT <- gsub(" .*","",berkeleyCrime$EVENTDT)
 ##map data with ggplot
 
 
-#map with ggmap
+#MAP 1: map with ggmap
 bounds <- c(min(berkeleyCrime$long), min(berkeleyCrime$lat), max(berkeleyCrime$long), max(berkeleyCrime$lat))
 background <- get_map(location=c(lon = mean(berkeleyCrime$long), lat = mean(berkeleyCrime$lat)), zoom=14, maptype = "terrain", source="google", color="bw")
 
@@ -48,7 +49,7 @@ map <- ggmap(background) + coord_equal() +
 
 map
 
-##map data with leaflet
+##MAP 2: map data with leaflet
 leaflet(berkeleyCrime) %>%
   addTiles(urlTemplate = "http://api.tiles.mapbox.com/v4/mapbox.light/{z}/{x}/{y}.png?access_token=pk.eyJ1Ijoiam9zaHBlcHBlciIsImEiOiJuTWdrY2k4In0.HCCXtgU04scrTB_-ON4kjA") %>%
   addCircleMarkers(
@@ -60,22 +61,18 @@ leaflet(berkeleyCrime) %>%
                    "<strong>Time:</strong>",EVENTTM)
   )
 
-##map with markercluster
+##MAP 3: add color, legend and clustering
+offenseColor <- colorFactor(rainbow(25), berkeleyCrime$CVLEGEND)
+
 leaflet(berkeleyCrime) %>%
   addTiles(urlTemplate = "http://api.tiles.mapbox.com/v4/mapbox.light/{z}/{x}/{y}.png?access_token=pk.eyJ1Ijoiam9zaHBlcHBlciIsImEiOiJuTWdrY2k4In0.HCCXtgU04scrTB_-ON4kjA") %>%
   addCircleMarkers(
-    stroke = FALSE, fillOpacity = 0.5, radius=8,
-    clusterOptions = markerClusterOptions(spiderfyDistanceMultiplier=2),
-    popup = ~paste("<strong>Offense:</strong>",OFFENSE,
+    stroke = FALSE, fillOpacity = 0.5, radius=7, color = ~offenseColor(CVLEGEND),
+    #clusterOptions = markerClusterOptions(spiderfyDistanceMultiplier=2, maxClusterRadius=60),
+    popup = ~paste("<strong>Offense:</strong>",CVLEGEND,
                    "<br>",
                    "<strong>Date:</strong>",EVENTDT,
                    "<br>",
                    "<strong>Time:</strong>",EVENTTM)
-  )
-
-#add layer selector
-
-##Shiny
-
-
-#add heatmap
+  ) %>%
+  addLegend(title = "Type of Offense", pal = offenseColor, values = ~CVLEGEND, opacity = 1)
