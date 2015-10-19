@@ -1,28 +1,37 @@
 function(input, output, session) {
   
+  #set the initial color palette
   offenseColor <- colorFactor(rainbow(25), berkeleyCrime$CVLEGEND)
   
-  #set options for filtering based on input
+  #set options for filtering based on type(s) of offense
   filteredData <- reactive({
-    if(is.null(input$offenseFilter)) {
-      berkeleyCrime
-    }
-    else{
-      subset(berkeleyCrime, CVLEGEND %in% input$offenseFilter)
-    }
+    if (is.null(input$offenseFilter)) {data <- berkeleyCrime}
+    else {data <- subset(berkeleyCrime, CVLEGEND %in% input$offenseFilter)}
   })
   
-  
+  #render initial map
   output$map <- renderLeaflet({
-    leaflet() %>%
-      addProviderTiles("CartoDB.Positron")
+    leaflet(filteredData()) %>%
+      addProviderTiles("CartoDB.Positron") %>%
+      addCircleMarkers(
+        stroke = FALSE, fillOpacity = 0.5, radius=6, color = ~offenseColor(CVLEGEND),
+        clusterOptions = mapClusterResult(),
+        popup = ~paste("<strong>Offense:</strong>",CVLEGEND,
+                       "<br>",
+                       "<strong>Date:</strong>",EVENTDT,
+                       "<br>",
+                       "<strong>Time:</strong>",EVENTTM)
+      )
   })
   
+  #set mapCluster variable based on input checkbox
   mapClusterResult <- reactive({
     if(input$mapCluster){TRUE}
     else {NULL}
   })
   
+  
+  #update map based on changed inputs
   observe({
     leafletProxy("map", data = filteredData()) %>%
       clearMarkers() %>%
