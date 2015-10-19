@@ -7,7 +7,8 @@ fluidPage(
                           
                           absolutePanel(top = 30, right = 30,
                                         wellPanel(style = "background-color: #ffffff; width: 350px",
-                                                  selectizeInput('offenseFilter', 'Filter by type(s) of offenses:', choices = c(offenseList), multiple=TRUE)
+                                                  selectizeInput('offenseFilter', 'Filter by type(s) of offenses:', choices = c(offenseList), multiple=TRUE),
+                                                  checkboxInput('mapCluster', 'Cluster results?')
                                         )
                           )
                       )

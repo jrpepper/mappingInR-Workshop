@@ -37,4 +37,4 @@ berkeleyCrime <- subset(berkeleyCrime, berkeleyCrime$lat>36)
 berkeleyCrime$EVENTDT <- gsub(" .*","",berkeleyCrime$EVENTDT)
 
 #create unique list of offenses
-offenseList <- as.character(unique(berkeleyCrime[,"CVLEGEND"]))
+offenseList <- sort(as.character(unique(berkeleyCrime[,"CVLEGEND"])))
