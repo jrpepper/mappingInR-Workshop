@@ -6,3 +6,8 @@ install.packages("RColorBrewer")
 install.packages("rgdal")
 install.packages("raster")
 install.packages("ggmap")
+
+install.packages('devtools')
+require(devtools)
+install_github('ramnathv/rCharts@dev')
+install_github('ramnathv/rMaps')
