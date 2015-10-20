@@ -5,7 +5,7 @@ library(RColorBrewer)
 library(rgdal)
 library(raster)
 library(ggmap)
-library(RColorBrewer)
+
 
 ###CLEAN DATA
     ##load data (and parse data)
