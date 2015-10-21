@@ -10,3 +10,5 @@ install.packages("rgdal")
 install.packages("raster")
 install.packages("ggmap")
 
+#load data
+source("loadData.R")

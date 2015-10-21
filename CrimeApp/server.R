@@ -24,7 +24,6 @@ function(input, output, session) {
     else {NULL}
   })
   
-  
   #update map based on changed inputs
   observe({
     leafletProxy("map", data = filteredData()) %>%
