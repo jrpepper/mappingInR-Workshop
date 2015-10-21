@@ -19,7 +19,7 @@ fluidPage(
                       #content on left hand side of the page
                              h1("About"),
                              br(),
-                             p("DHere is an about page where you can include more information about your project.")
+                             p("Here is an about page where you can include more information about your project.")
                       )
   )
 )
