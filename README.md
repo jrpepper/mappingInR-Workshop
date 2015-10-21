@@ -3,6 +3,10 @@
 
 ### Mac OS Installation
 
+## installing from DMG files
+
+
+##using homebrew
 if you need to install homebrew
 ```
 ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"

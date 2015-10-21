@@ -6,8 +6,7 @@ library(rgdal)
 library(raster)
 library(ggmap)
 
-
-###Load Data
+###Load and clean data
 source("loadData.R")
 
 ###GGPLOT
@@ -28,7 +27,7 @@ source("loadData.R")
     
     map
 
-##MAP 3: map data with Leaflet
+##MAP 3: map data with Leaflet.js
     leaflet(berkeleyCrime) %>%
       addProviderTiles("CartoDB.Positron") %>%
       addCircleMarkers(
@@ -51,3 +50,10 @@ source("loadData.R")
                        "<strong>Time:</strong>",EVENTTM)
       ) %>%
       addLegend(title = "Type of Offense", pal = offenseColor, values = ~CVLEGEND, opacity = 1, position="bottomleft")
+    
+    
+    
+    
+    
+    
+    

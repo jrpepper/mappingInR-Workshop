@@ -9,19 +9,13 @@ function(input, output, session) {
     else {data <- subset(berkeleyCrime, CVLEGEND %in% input$offenseFilter)}
   })
   
-  #render initial map
   output$map <- renderLeaflet({
+    # Use leaflet() here, and only include aspects of the map that
+    # won't need to change dynamically (at least, not unless the
+    # entire map is being torn down and recreated).
     leaflet(filteredData()) %>%
       addProviderTiles("CartoDB.Positron") %>%
-      addCircleMarkers(
-        stroke = FALSE, fillOpacity = 0.5, radius=6, color = ~offenseColor(CVLEGEND),
-        clusterOptions = mapClusterResult(),
-        popup = ~paste("<strong>Offense:</strong>",CVLEGEND,
-                       "<br>",
-                       "<strong>Date:</strong>",EVENTDT,
-                       "<br>",
-                       "<strong>Time:</strong>",EVENTTM)
-      )
+      setView(-122.28, 37.87, zoom = 14)
   })
   
   #set mapCluster variable based on input checkbox
