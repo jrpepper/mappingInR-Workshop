@@ -39,7 +39,8 @@ function(input, output, session) {
                        "<br>",
                        "<strong>Time:</strong>",EVENTTM)
       ) %>%
-      addLegend(title = "Type of Offense", position = "bottomleft", pal = offenseColor, values = ~CVLEGEND, opacity = 1)
+      addLegend(title = "Type of Offense", position = "bottomleft",
+                pal = offenseColor, values = ~CVLEGEND, opacity = 1)
     
     
   })
