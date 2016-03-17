@@ -1,6 +1,6 @@
 # mappingInR-Workshop
 
-You can view this tutorial online at: [http://jrpepper.github.io/mappingInR-Workshop/](./http://jrpepper.github.io/mappingInR-Workshop/)
+You can view this tutorial online at: [http://jrpepper.github.io/mappingInR-Workshop/](http://jrpepper.github.io/mappingInR-Workshop/)
 
 If you clone or download this folder, start by clicking on the [mapping-in-r.html](./mapping-in-r.html) file to view the tutorial with inline maps, R code and outputs.
 
