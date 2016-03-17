@@ -1,0 +1,339 @@
+---
+title: "Leaflet in R: Raw Code"
+author: "Josh Pepper"
+date: "February 22, 2016"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+Below is the raw code for the workshop: 'Mapping in Leaflet'. I recommend using the [Markdown text](mapping-in-r.html), as it has all of the maps printed out as figures, but just having blocks of the code may be more useful if you want to highlight and run through all the code at once.
+
+#Introduction
+```{r, eval=FALSE}
+
+
+##Setup
+# This workshop/tutorial will walk you through the basics of using the Leaflet mapping package in R. To begin, lets set up our packages and environment.
+
+##Installing packages
+# To install Leaflet, use the following command `install.packages("leaflet")`. We will be using other packages in this tutorial. If you don't already have any of the following packages installed, you can use this code to do so:
+
+###ONLY RUN THESE IF YOU HAVEN'T PREVIOUSLY INSTALLED THESE PACKAGES
+install.packages("leaflet")
+install.packages("RColorBrewer")
+install.packages("rgdal")
+install.packages("raster")
+install.packages("ggplot2")
+install.packages("ggmap")
+install.packages("magrittr")
+
+
+##Loading packages
+#You only instal a package once, but each time you want to use it, you have to load it with `library()`
+
+library(leaflet)
+library(RColorBrewer)
+library(rgdal)
+library(raster)
+library(ggplot2)
+library(ggmap)
+library(magrittr)
+
+#plus some packages only used for making this presentaiton, not actually used in the mapping tutorial
+library("png")
+library("grid")
+
+
+##Set working directory
+setwd("enter/your/directory/here")
+
+##Loading crime data
+#Load some sample crime data from the City of [Berkeley Crime Incidence Data Portal](https://data.cityofberkeley.info/Public-Safety/Crime-Incidents/k2nh-s5h5).
+
+###Load and clean data
+source("loadData.R")
+
+
+#Now that we've loaded the crime data, lets take a look at the first few lines of our new variable titled `berkeleyCrime`:
+
+berkeleyCrime[1:5,c("OFFENSE","EVENTDT","EVENTTM","lat","long")]
+
+
+```
+
+#Mapping with GGPLOT
+```{r, eval=FALSE}
+##GGPLOT map
+
+    map <- ggplot() + 
+           geom_point(data=berkeleyCrime, aes(x=long, y=lat))
+    map
+
+    
+    
+##Add a background
+#We can use the function `get_map()` to pull a background map from google, OpenStreetMap (OSM) or [Stamen](http://maps.stamen.com/).
+
+
+    background <- get_map(location=c(lon = mean(berkeleyCrime$long),
+                                     lat = mean(berkeleyCrime$lat)),
+                          zoom=14,
+                          maptype = "terrain",
+                          source="google",
+                          color="bw")
+
+    map <- ggmap(background) + coord_equal() + 
+      geom_point(data=berkeleyCrime, aes(x=long, y=lat, alpha=0.3,
+                                         size=7, color=CVLEGEND)) +
+      scale_size_continuous(range = c(3), guide=FALSE) +
+      scale_alpha_continuous(range = c(.3), guide=FALSE)
+    
+    map
+
+#Some things you can try to change this map:
+
+# * Change maptype from `"terrain"` to `"satellite"`
+# * Change color from "bw" to "color".
+# * In the console, type `?get_map` to view other options to customize your background map
+
+#Leaflet Map: Crime Map
+##Intro to Leaflet {.smaller}
+#Leaflet is one of the most popular open-source JavaScript libraries for interactive maps. We can easily enable Leaflet and pull up the standard OpenStreetMap (OSM) baselayer using the following command:
+
+leaflet() %>% addTiles() %>% addMarkers(lng = -122.258, lat = 37.870)
+
+
+#Try panning around and zooming in on this map, and notice how more and more data is loaded.
+
+##Piping %>% {.smaller}
+#So what's with the `%>%` used in the previous example??
+
+#Throughout this presentation, I'll use something called a pipe which looks like this: `%>%`
+#Pipes are a way of passing the result of one function into the next function. For example, the traditional way of pulling up a map with leaflet, adding tiles and then setting the view would be as follows:
+
+#`addMarkers(addTiles(leaflet()), lng = -122.258, lat = 37.870)`.
+
+# Piping lets us flip the notation inside out, so it reads more naturally:
+# 
+# `leaflet() %>% addTiles() %>% addMarkers(lng = -122.258, lat = 37.870)`.
+# 
+# See how the code in this second example reads like a recipe of what we want to do:
+# 
+# 1. enable leaflet: `leaflet() %>%`
+# 2. add background tiles: `addTiles() %>%`
+# 3. set the view of the map: `setView(lng = -122.3, lat = 37.9, zoom=5)`
+# 
+# You can read more about using pipes [here](http://www.r-statistics.com/2014/08/simpler-r-coding-with-pipes-the-present-and-future-of-the-magrittr-package/) and [here](https://cran.r-project.org/web/packages/magrittr/vignettes/magrittr.html).
+# 
+# ##Crime Map {.smaller}
+# Lets use out new knowledge of Leaflet to map the first 100 crimes in our `berkeleyCrime` dataset:
+
+
+leaflet() %>% addTiles() %>% addMarkers(data=berkeleyCrime[1:100,])
+
+
+##Popups {.smaller}
+#In this example, we change out `markers` to `circleMarkers` so we can adjust the color (and radius if we wish) and also add a `popup` that displays information when we click on the circle:
+
+
+leaflet() %>% addTiles() %>%
+      addCircleMarkers(data=berkeleyCrime[1:100,],
+                       stroke = FALSE, fillOpacity = 0.5, radius=8,
+                       popup=~paste("<strong>Offense:</strong>",CVLEGEND,
+                       "<br>",
+                       "<strong>Date:</strong>",EVENTDT,
+                       "<br>",
+                       "<strong>Time:</strong>",EVENTTM))
+
+##Color Coding by Crime
+
+    offenseColor <- colorFactor(rainbow(25), berkeleyCrime$CVLEGEND)
+    
+    leaflet(berkeleyCrime[1:100,]) %>%
+      addProviderTiles("CartoDB.Positron") %>%
+      addCircleMarkers(
+        stroke = FALSE, fillOpacity = 0.5, radius=6,
+        color = ~offenseColor(CVLEGEND),
+        popup = ~paste("<strong>Offense:</strong>",CVLEGEND,
+                       "<br>",
+                       "<strong>Date:</strong>",EVENTDT,
+                       "<br>",
+                       "<strong>Time:</strong>",EVENTTM)
+      ) %>%
+      addLegend(title = "Type of Offense", pal = offenseColor,
+                values = ~CVLEGEND, opacity = 1, position="bottomleft")
+
+
+##Clustering
+#If we want to view many crimes, say all 4,598 crimes in this dataset, we may want to cluster our results. Displaying that many points at once will slow down our computer, and it just hard to visually process. Do cluster results in leaflet, we use the `clusterOptions` variable with `markers` or `circleMarkers`.
+
+
+leaflet(berkeleyCrime) %>%
+      addProviderTiles("CartoDB.Positron") %>%
+      addCircleMarkers(
+        stroke = FALSE, fillOpacity = 0.5, radius=6, color = ~offenseColor(CVLEGEND),
+        clusterOptions = markerClusterOptions(spiderfyDistanceMultiplier=2, maxClusterRadius=60),
+        popup = ~paste("<strong>Offense:</strong>",CVLEGEND,
+                       "<br>",
+                       "<strong>Date:</strong>",EVENTDT,
+                       "<br>",
+                       "<strong>Time:</strong>",EVENTTM)
+      ) %>%
+      addLegend(title = "Type of Offense", pal = offenseColor, values = ~CVLEGEND, opacity = 1, position="bottomleft")
+
+```
+
+#Map #2: Yosemite Peaks
+```{r, eval=FALSE}
+
+#For this example, we'll use OpenStreetMap (OSM) data on the peaks in Yosemite National Park. This OSM data is extracted from [TurboOverpass](http://overpass-turbo.eu/). Come to a later workshop to learn how to do this!
+
+img <- readPNG("./data/turbo-overpass.png")
+grid.raster(img)
+
+
+##Adding Polygons
+#Loading a *shapefile* of Yosemite National Park using the function `readOGR()`. Notice the different notation where the variable `yosemite` is loaded directly into the `leaflet()` function. If you're only loading one layer into leaflet this is easier, but if you're loading multiple layers, it's best to be explicit and specify your data layer in the function that adds that layer (i.e. `addPolygons()`, `addMarkers()`, etc.)
+
+#load data
+yosemite <- readOGR("./data/yosemite", "yosemite", verbose = FALSE) #yosemite boundary shapefile
+PCT <- readOGR("./data/PCT.geojson", "OGRGeoJSON", verbose=FALSE)
+
+#make map
+leaflet() %>% addTiles() %>% addPolylines(data = yosemite) %>% addPolylines(data = PCT, color="red")
+
+
+##Mapping peaks
+#load peaks points and PCT line
+peaks <- readOGR("./data/peaks.geojson", "OGRGeoJSON", verbose=FALSE)
+
+#convert peak values to numeric
+peaks <- subset(peaks, peaks@data$ele!="0")
+peaks@data$ele <- round(as.numeric(levels(peaks@data$ele))[peaks@data$ele] * 3.28084)
+
+#make map of peaks
+leaflet() %>%
+  addTiles() %>%
+  addCircleMarkers(data=peaks, weight=0, radius=8, fillOpacity=0.6,
+                   popup=~paste("Name: ",name,"<br>Elevation: ",ele,"feet")) %>%
+  addPolylines(data=yosemite, fillOpacity = 0, dashArray=c(10,10), fill=FALSE, color="red") %>%
+  addPolylines(data=PCT, fillOpacity = 0, dashArray=c(10,10), fill=FALSE, color="red")
+
+
+#Similarly to how we colored crimes by type of crime, we can size these circles based on their elevation using the code: `radius=~ele/1000`.
+
+#Ive also added a marker using an icon to the subset of all peaks that are over 10,000 feet. To do this, we first set the icon setting using the function `icons()` and then using`addMarkers` with the subset of peaks `data=subset(peaks, peaks@data$ele>10000)`
+
+
+#icon settings
+peakIcons <- icons(
+  iconUrl = "./data/Mountain-512.png",
+  iconWidth = 15, iconHeight = 15,
+  iconAnchorX = 7.5, iconAnchorY = 8.5
+  )
+
+leaflet() %>%
+  addTiles() %>%
+  addCircleMarkers(data=peaks, weight=0, radius=~ele/1000, fillOpacity=0.7, 
+                   popup=~paste("Name: ",name,"<br>Elevation: ",ele)) %>%
+  addMarkers(data=subset(peaks, peaks@data$ele>10000),
+             icon = peakIcons,
+             popup=~paste("Name: ",name,"<br>Elevation: ",ele)) %>%
+  addPolylines(data=yosemite, fillOpacity = 0, dashArray=c(10,10), fill=FALSE, color="red")
+
+
+##Legends
+#Lets add some color to our circles. Do do this, we create a palette, just like we did for Berkeley crimes. In this example, there is an extra line where I first define the palette `spectral` so I can flip the color scheme. Then we map elevations to the palette in the line that begins `eleColor `.
+
+#To add a legend to the map, we use the function `addLegend()` and assign the `pal` to the mapped palette `eleColor`.
+
+#create color scale from elevation
+spectral <- brewer.pal(11, "Spectral")  %>% rev()
+eleColor <- colorBin(spectral, peaks@data$ele)
+
+leaflet(peaks) %>%
+  addTiles() %>%
+  addCircleMarkers(weight=0, radius=~ele/1000, fillOpacity=0.7, color = ~eleColor(ele),
+                   popup=~paste("Name: ",name,"<br>Elevation: ",ele)) %>%
+  addMarkers(data=subset(peaks,peaks@data$ele>10000),
+             icon = peakIcons,
+             popup=~paste("Name: ",name,"<br>Elevation: ", ele)) %>%
+    addLegend(title = "Peak Elevation", pal = eleColor,
+            values = ~ele, opacity = 1, position="bottomleft") %>%
+  addPolylines(data=yosemite, fillOpacity = 0, dashArray=c(10,10), fill=FALSE, color="blue")
+
+##Basemaps
+#You can use the function `addProviderTiles()` to change the background map, sometimes called the 'basemap'. To view the options for background maps, visit [http://leaflet-extras.github.io/leaflet-providers/preview/](http://leaflet-extras.github.io/leaflet-providers/preview/).
+
+#So we don't have to retype our code every time, lets save our map (without a basemap) as a variable:
+
+peakMap <- leaflet() %>%
+  addCircleMarkers(data=peaks, weight=0, radius=~ele/1000, fillOpacity=0.7, color = ~eleColor(ele),
+                   popup=~paste("Name: ",name,"<br>Elevation: ",ele)) %>%
+  addLegend(title = "Peak Elevation", pal = eleColor,
+            values = peaks@data$ele, opacity = 1, position="bottomleft") %>%
+  addMarkers(data=subset(peaks,peaks@data$ele>10000),
+             icon = peakIcons,
+             popup=~paste("Name: ",name,"<br>Elevation: ",ele)) %>%
+  addPolylines(data=yosemite, fillOpacity = 0, dashArray=c(10,10), fill=FALSE, color="white")
+
+#Great, now we can call `peakMap` and just add in different types of basemaps using `addProviderTiles`
+
+###Satellite Imagery
+
+peakMap %>% addProviderTiles("Esri.WorldImagery")
+
+
+###Positron
+
+peakMap %>% addProviderTiles("CartoDB.Positron") %>%
+  addPolylines(data=yosemite, fillOpacity = 0, dashArray=c(10,10), fill=FALSE, color="black")
+
+###Mapbox
+mapbox <- "http://api.tiles.mapbox.com/v4/mapbox.outdoors/{z}/{x}/{y}.png?access_token=pk.eyJ1Ijoiam9zaHBlcHBlciIsImEiOiJuTWdrY2k4In0.HCCXtgU04scrTB_-ON4kjA"
+
+peakMap %>% addTiles(urlTemplate = mapbox)
+
+
+###Weather Maps
+#You can even pull in weather data. In this exmaple, I've overlaid weather data on top of the `CartoDB.Positron` basemap.
+
+#Satellite Map
+leaflet() %>% addProviderTiles("CartoDB.Positron") %>%
+  addProviderTiles("OpenWeatherMap.Temperature", options=providerTileOptions(opacity=0.2)) %>%
+  setView(lng = -122.2579335, lat = 37.8700441, zoom=4)
+
+
+##Layer Switcher
+#To add 'controls' to our map, we use the function `addLayersControl()`.
+#We assign a `group` to each basemap and layer (polygon, marker, line, etc). Then layer switcher allows us to toggle between different basemaps and turn on/off each of the layers.
+
+
+leaflet() %>%
+  addCircleMarkers(data=peaks, weight=0, radius=~ele/1000, fillOpacity=0.7, color = ~eleColor(ele),
+                   popup=~paste("Name: ",name,"<br>Elevation: ",ele),
+                   group="Peaks") %>%
+  addLegend(title = "Peak Elevation", pal = eleColor,
+            values = peaks@data$ele, opacity = 1, position="bottomleft") %>%
+  addMarkers(data=subset(peaks,peaks@data$ele>10000),
+             icon = peakIcons, popup=~paste("Name: ",name,"<br>Elevation: ",ele),
+             group="Mountain Icons") %>%
+  addPolylines(data=yosemite, fillOpacity = 0, dashArray=c(10,10),
+               fill=FALSE, color="#3288BD", group="Yosemite") %>%
+  addPolylines(data=PCT, dashArray=c(10,10),
+               fill=FALSE, color="#9E0142", group="PCT") %>%
+  #add basemaps
+  addProviderTiles("CartoDB.Positron", group="Simple") %>%
+  addProviderTiles("Esri.WorldImagery", group="Satellite") %>%
+  addTiles(urlTemplate = mapbox, group="Outdoors") %>%
+  #Add layer switcher
+   addLayersControl(
+    baseGroups = c("Simple", "Satellite", "Outdoors"),
+    overlayGroups = c("Peaks","Mountain Icons","Yosemite","PCT"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+```
+

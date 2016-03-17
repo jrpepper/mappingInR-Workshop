@@ -1,6 +1,6 @@
 ###LOAD AND CLEAN DATA
 ##load data (and parse data)
-berkeleyCrime <- read.csv("./data/berkeley-crime.csv")
+berkeleyCrime <- read.csv("./data/berkeley-crime-2016.csv")
 summary(berkeleyCrime)
 
 #extracting Lat and Long from block location field
