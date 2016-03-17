@@ -1,0 +1,7 @@
+input {
+  width: 12px;
+}
+
+slides > slide > hgroup + article {
+    margin-top: 30px;
+}
