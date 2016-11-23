@@ -1,7 +1,7 @@
 ---
-title: "Leaflet in R"
+title: "Creating Interactive Maps in R with ggMap + Leaflet"
 author: "Josh Pepper"
-date: "February 21, 2016"
+date: "November 7, 2016"
 output:
   ioslides_presentation:
     css: customCSS.css
@@ -12,7 +12,7 @@ output:
     number_sections: true-->
 ---
 
-##Leaflet and Mapping in R | Josh Pepper, February 21st 2016
+##Creating Interactive Maps in R with ggMap + Leaflet | Josh Pepper, November 7th 2016
 
 Welcome! While we're waiting:
 
@@ -39,7 +39,7 @@ leaflet() %>% addTiles()
 
 * Setup
 * Berkeley crime maps
-    + GGPLOT2
+    + GGPLOT2 / GGMAP
     + Intro to Leaflet
     + Markers and Popups
     + Color coding
@@ -88,6 +88,8 @@ library(raster)
 library(ggplot2)
 library(ggmap)
 library(magrittr)
+library(gstat)
+library(maptools)
 ```
 
 ```{r, echo=FALSE}
@@ -114,7 +116,7 @@ berkeleyCrime[1:5,c("OFFENSE","EVENTDT","EVENTTM","lat","long")]
 ```
 
 
-#Mapping with GGPLOT
+#Mapping with GGPLOT / GGMAP
 
 ##GGPLOT map
 ```{r, message=FALSE}
@@ -163,6 +165,21 @@ map
 ```
 
 ##Add a background
+```{r, echo=FALSE, fig.height=5, fig.width=12}
+    #This actually makes the map, the previous one is just for display.
+background <- get_map(location=c(lon = mean(berkeleyCrime$long),
+                                 lat = mean(berkeleyCrime$lat)),
+                      zoom=14,
+                      maptype = "satellite",
+                      source="google")
+
+map <- ggmap(background) + coord_equal() + 
+  geom_point(data=berkeleyCrime, color="red", size=2, alpha=0.3, aes(x=long, y=lat))
+
+map
+```
+
+##Add a background
 Some things you can try to change this map:
 
 * Change maptype from `"terrain"` to `"satellite"`
@@ -206,6 +223,7 @@ Lets use out new knowledge of Leaflet to map the first 100 crimes in our `berkel
 leaflet() %>% addTiles() %>% addMarkers(data=berkeleyCrime[1:100,])
 ```
 
+
 ##Adding other layers {.smaller}
 
 For more information, pull up the help on any of the add functions in leaflet
@@ -225,12 +243,12 @@ addTiles(map, urlTemplate = "http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
 
 addCircles(...)
 addPolylines(...)
+addRasterImage(...)
 addRectangles(...)
 addPolygons(...)
 addPopups()
 ...
 ```
-
 
 ##Popups {.smaller}
 In this example, we change our `markers` to `circleMarkers` so we can adjust the color (and radius if we wish) and also add a `popup` that displays information when we click on the circle:
@@ -249,6 +267,7 @@ leaflet() %>% addTiles() %>%
                        )
 ```
 
+
 ##Popups
 
 * Changing `markers` to `circleMarkers`
@@ -266,6 +285,48 @@ leaflet() %>% addTiles() %>%
                        "<strong>Time:</strong>",EVENTTM)
                        ### </b>
                        )
+```
+
+##Raster Layers {.smaller}
+
+* Make a raster layer `r`
+* Define a color palette
+* use `addRasterImage(r)`
+
+```{r, message=FALSE, warning=F, eval=F}
+#subset data
+larceny <- subset(berkeleyCrime,berkeleyCrime$CVLEGEND=="LARCENY")
+
+#make raster
+sSp <- as(SpatialPoints(larceny[,c("long","lat")]), "ppp")  # convert points to pp class
+Dens <- density(sSp, adjust = 0.3)  # create density object
+r <- raster(Dens)
+crs(r) <- sp::CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+
+pal.act <- colorNumeric(c("#ffffd400","#fed98e","#fe9929","#d95f0e","#993404"), values(r),
+                        na.color = "transparent", alpha=TRUE)
+
+leaflet() %>% addProviderTiles("CartoDB.Positron") %>%
+  addCircleMarkers(data=larceny[1:1000,], radius=2, fillColor="red", color=F) %>%
+  addRasterImage(r, opacity=0.7, colors=pal.act)
+```
+
+##Raster Layers {.smaller}
+```{r, message=FALSE, warning=F, echo=F}
+#subset data
+larceny <- subset(berkeleyCrime,berkeleyCrime$CVLEGEND=="LARCENY")
+
+#make raster
+sSp <- as(SpatialPoints(larceny[,c("long","lat")]), "ppp")  # convert points to pp class
+Dens <- density(sSp, adjust = 0.3)  # create density object
+r <- raster(Dens)
+crs(r) <- sp::CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+
+pal.act <- colorNumeric(c("#ffffd400","#fed98e","#fe9929","#d95f0e","#993404"), values(r), na.color = "transparent", alpha=TRUE)
+
+leaflet() %>% addProviderTiles("CartoDB.Positron") %>%
+  addCircleMarkers(data=larceny[1:1000,], radius=2, fillColor="red", color=F) %>%
+  addRasterImage(r, opacity=0.7, colors=pal.act)
 ```
 
 ##Color Coding by Crime {.smaller}

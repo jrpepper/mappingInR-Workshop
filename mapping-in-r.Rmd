@@ -1,7 +1,7 @@
 ---
 title: "Leaflet in R"
 author: "Josh Pepper"
-date: "February 21, 2016"
+date: "November 7, 2016"
 output:
   html_document:
     toc: true
@@ -25,6 +25,7 @@ install.packages("rgdal")
 install.packages("raster")
 install.packages("ggplot2")
 install.packages("ggmap")
+install.packages("gstat")
 install.packages("magrittr")
 ```
 
@@ -39,6 +40,8 @@ library(raster)
 library(ggplot2)
 library(ggmap)
 library(magrittr)
+library(gstat)
+library(maptools)
 ```
 
 ```{r, echo=FALSE}
@@ -82,11 +85,7 @@ We can use the function `get_map()` to pull a background map from google, OpenSt
                           maptype = "terrain",
                           source="google",
                           color="bw")
-```
 
----
-
-```{r, message=FALSE, warning=FALSE}
     map <- ggmap(background) + coord_equal() + 
       geom_point(data=berkeleyCrime, aes(x=long, y=lat, alpha=0.3,
                                          size=7, color=CVLEGEND)) +
@@ -95,8 +94,6 @@ We can use the function `get_map()` to pull a background map from google, OpenSt
     
     map
 ```
-
----
 
 Some things you can try to change this map:
 
@@ -141,6 +138,32 @@ Lets use out new knowledge of Leaflet to map the first 100 crimes in our `berkel
 leaflet() %>% addTiles() %>% addMarkers(data=berkeleyCrime[1:100,])
 ```
 
+##Adding other layers {.smaller}
+
+For more information, pull up the help on any of the add functions in leaflet
+(e.g. `?addMarkers`):
+
+```{r, eval=FALSE}
+addMarkers(map, lng = NULL, lat = NULL, layerId = NULL, group = NULL, icon = NULL,
+           popup = NULL, options = markerOptions(), clusterOptions = NULL,
+           clusterId = NULL, data = getMapData(map))
+
+addCircleMarkers(map, lng = NULL, lat = NULL, radius = 10, layerId = NULL, 
+    group = NULL, stroke = TRUE, color = "#03F", weight = 5, opacity = 0.5, 
+    fill = TRUE, fillColor = color, ....)
+
+addTiles(map, urlTemplate = "http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+         attribution = NULL, layerId = NULL, group = NULL, options = tileOptions())
+
+addCircles(...)
+addRasterImage(...)
+addPolylines(...)
+addRectangles(...)
+addPolygons(...)
+addPopups()
+...
+```
+
 ##Popups {.smaller}
 In this example, we change out `markers` to `circleMarkers` so we can adjust the color (and radius if we wish) and also add a `popup` that displays information when we click on the circle:
 
@@ -155,9 +178,25 @@ leaflet() %>% addTiles() %>%
                        "<strong>Time:</strong>",EVENTTM))
 ```
 
-##Color Coding by Crime
+##Raster Layers {.smaller}
+```{r, message=FALSE, warning=F}
+#subset data
+larceny <- subset(berkeleyCrime,berkeleyCrime$CVLEGEND=="LARCENY")
 
- 
+#make raster
+sSp <- as(SpatialPoints(larceny[,c("long","lat")]), "ppp")  # convert points to pp class
+Dens <- density(sSp, adjust = 0.3)  # create density object
+r <- raster(Dens)
+crs(r) <- sp::CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+
+pal.act <- colorNumeric(c("#ffffd400","#fed98e","#fe9929","#d95f0e","#993404"), values(r), na.color = "transparent", alpha=TRUE)
+
+leaflet() %>% addProviderTiles("CartoDB.Positron") %>%
+  addCircleMarkers(data=larceny[1:1000,], radius=2, fillColor="red", color=F) %>%
+  addRasterImage(r, opacity=0.7, colors=pal.act)
+```
+
+##Color Coding by Crime
 ```{r, message=FALSE}
     offenseColor <- colorFactor(rainbow(25), berkeleyCrime$CVLEGEND)
     

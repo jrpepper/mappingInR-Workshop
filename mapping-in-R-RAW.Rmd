@@ -1,7 +1,7 @@
 ---
 title: "Leaflet in R: Raw Code"
 author: "Josh Pepper"
-date: "February 22, 2016"
+date: "November 7, 2016"
 output:
   html_document:
     toc: true
@@ -9,7 +9,7 @@ output:
     number_sections: true
 ---
 
-Below is the raw code for the workshop: 'Mapping in Leaflet'. I recommend using the [Markdown text](mapping-in-r.html), as it has all of the maps printed out as figures, but just having blocks of the code may be more useful if you want to highlight and run through all the code at once.
+Below is the raw code for the workshop: 'Creating Interactive Maps in R with ggMap + Leaflet'. I recommend using the [Markdown text](mapping-in-r.html), as it has all of the maps printed out as figures, but just having blocks of the code may be more useful if you want to highlight and run through all the code at once.
 
 #Introduction
 ```{r, eval=FALSE}
@@ -22,14 +22,15 @@ Below is the raw code for the workshop: 'Mapping in Leaflet'. I recommend using 
 # To install Leaflet, use the following command `install.packages("leaflet")`. We will be using other packages in this tutorial. If you don't already have any of the following packages installed, you can use this code to do so:
 
 ###ONLY RUN THESE IF YOU HAVEN'T PREVIOUSLY INSTALLED THESE PACKAGES
-install.packages("leaflet")
-install.packages("RColorBrewer")
-install.packages("rgdal")
-install.packages("raster")
-install.packages("ggplot2")
-install.packages("ggmap")
-install.packages("magrittr")
-
+# install.packages("leaflet")
+# install.packages("RColorBrewer")
+# install.packages("rgdal")
+# install.packages("raster")
+# install.packages("ggplot2")
+# install.packages("ggmap")
+# install.packages("magrittr")
+# install.packages("gstat")
+# install.packages("maptools")
 
 ##Loading packages
 #You only instal a package once, but each time you want to use it, you have to load it with `library()`
@@ -41,6 +42,8 @@ library(raster)
 library(ggplot2)
 library(ggmap)
 library(magrittr)
+library(gstat)
+library(maptools)
 
 #plus some packages only used for making this presentaiton, not actually used in the mapping tutorial
 library("png")
@@ -134,6 +137,24 @@ leaflet() %>% addTiles() %>% addMarkers(lng = -122.258, lat = 37.870)
 
 leaflet() %>% addTiles() %>% addMarkers(data=berkeleyCrime[1:100,])
 
+##Raster Layers {.smaller}
+
+#subset data
+larceny <- subset(berkeleyCrime,berkeleyCrime$CVLEGEND=="LARCENY")
+
+#make raster
+sSp <- as(SpatialPoints(larceny[,c("long","lat")]), "ppp")  # convert points to pp class
+Dens <- density(sSp, adjust = 0.3)  # create density object
+r <- raster(Dens)
+crs(r) <- sp::CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+
+pal.act <- colorNumeric(c("#ffffd400","#fed98e","#fe9929","#d95f0e","#993404"), values(r),
+                        na.color = "transparent", alpha=TRUE)
+
+leaflet() %>% addProviderTiles("CartoDB.Positron") %>%
+  addCircleMarkers(data=larceny[1:1000,], radius=2, fillColor="red", color=F) %>%
+  addRasterImage(r, opacity=0.7, colors=pal.act)
+
 
 ##Popups {.smaller}
 #In this example, we change out `markers` to `circleMarkers` so we can adjust the color (and radius if we wish) and also add a `popup` that displays information when we click on the circle:
@@ -147,6 +168,21 @@ leaflet() %>% addTiles() %>%
                        "<strong>Date:</strong>",EVENTDT,
                        "<br>",
                        "<strong>Time:</strong>",EVENTTM))
+
+##Raster Layers {.smaller}
+```{r, message=FALSE}
+#make raster
+sSp <- as(SpatialPoints(berkeleyCrime[,c("long","lat")]), "ppp")  # convert points to pp class
+Dens <- density(sSp, adjust = 0.3)  # create density object
+r <- raster(Dens)
+crs(r) <- sp::CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+
+pal.act <- colorNumeric(c("#ffffd400","#fed98e","#fe9929","#d95f0e","#993404"), values(r), na.color = "transparent", alpha=TRUE)
+
+leaflet() %>% addProviderTiles("CartoDB.Positron") %>%
+  addCircleMarkers(data=berkeleyCrime[1:1000,], radius=2, fillColor="red", color=F) %>%
+  addRasterImage(r, opacity=0.7, colors=pal.act)
+```
 
 ##Color Coding by Crime
 
